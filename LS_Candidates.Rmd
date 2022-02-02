@@ -1,0 +1,204 @@
+---
+title: "Exploring Lok Sabha 2014 Candidates Data"
+author: "**Shardul Raghavendra Deolankar**"
+date: "28/01/2022"
+output: 
+  html_document:
+    theme: yeti
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=12, fig.height=8) 
+```
+
+![](art.jpg)
+
+Trying to answer the following 20 questions:  
+1. Total number of candidates that contested the election?  
+2. What was the **Gender** composition of the candidates?  
+3. What was the **Category** composition of the candidates?  
+4. What is the age-group of maximum number of candidates?  
+5. How many political parties contested the elections?  
+6. **Top ten political parties** that contested most number of seats?  
+7. What was the category distribution of the candidates by these ten political parties?  
+8. What is the Gender composition of the candidates belonging to these parties?  
+9. Who was the **oldest candidate**? Get all his Details  
+10. Who was the **oldest woman**? Get all her details  
+11. Which Political party won the **maximum number of seats**?  
+12. Which state has the **highest number of constituencies**?  
+13. In which state did BJP win the highest number of seats?  
+14. What is the total **vote-share of BJP**?  
+15. In which state did INC win the highest number of seats?  
+16. What is the total **vote-share of INC**?  
+17. Which candidate got the highest number of votes?  
+18. Which candidate got the lowest number of votes?  
+19. Which constituency had the **highest number of candidates**?  
+20. In how many constituencies was **INC at second position**?  
+
+
+
+## **First Glance of the Data**
+```{r}
+df1 <- read.csv("LS2014Candidate.csv", stringsAsFactors = TRUE, na.strings = c("", NA, "NULL"))
+head(df1)
+summary(df1)
+```
+It can be seen that this data contains independent candidates as well as the None of the above option for each constituency.
+  
+  
+### Question 1: Total number of candidates that contested the election?
+```{r}
+df_updated <- df1[-which(df1$Candidate.Name == "None of the Above"), ]
+write.csv(df_updated, "Updated_df.csv")
+#nota <- length(which(df1$Candidate.Name == "None of the Above"))
+df1 <- read.csv("Updated_df.csv", stringsAsFactors = TRUE, na.strings = c("", NA, "NULL"))
+num_candidates <- length(df1$Candidate.Name)
+print(paste("The total number of candidates that contested the 2014 Lok Sabha Elections are", num_candidates))
+```
+### Question 2: What was the **Gender** composition of the candidates?
+```{r}
+library(RColorBrewer)
+df2 <- subset(df1, Candidate.Name != "None of the Above")
+gender <- as.table(table(df_updated$Candidate.Sex))
+barplot(gender, col = brewer.pal(n = 2, name = "Set3"), border = "White")
+prop.table(gender)
+```
+
+### Question 3: What was the **Category** composition of the candidates?
+```{r}
+category <- as.table(table(df2$Candidate.Category))
+pie(category, main = "Category Composition of the candidates", col = brewer.pal(n = length(df2$Candidate.Category), name = "Set3"), border = "White")
+prop.table(category)
+```
+### Question 4: What is the age-group of maximum number of candidates?
+```{r}
+hist(as.numeric(as.character(df2$Candidate.Age)), main = paste("Histogram of Age group of the candidates"), xlab = "Age group", col = brewer.pal(n = 11, name = "Set3"), border = "white", density = 100, angle = 0)
+```
+
+
+This shows that the maximum candidates belong to the age group of 40-45 years. 
+
+
+### Question 5: How many political parties contested the elections?
+```{r}
+parties <- table(df2$Party.Abbreviation)
+print(paste(length(parties) - 1, "parties contested the elections"))
+```
+### Question 6: Top ten political parties that contested most number of seats?
+```{r}
+summary(df2$Party.Abbreviation, maxsum = 12)
+```
+The top 10 political parties were BSP, INC, AAAP, BJP. BMUP, SP, AITC, CPM, JD(U), CPI(ML) (IND stands for independent, hence not included)
+
+### Question 7: What was the category distribution of the candidates by these ten political parties? 
+```{r}
+df3 <- subset(df2, df2$Party.Abbreviation == "BSP")
+df4 <- subset(df2, df2$Party.Abbreviation == "INC")
+df5 <- subset(df2, df2$Party.Abbreviation == "AAAP")
+df6 <- subset(df2, df2$Party.Abbreviation == "BJP")
+df7 <- subset(df2, df2$Party.Abbreviation == "BMUP")
+df8 <- subset(df2, df2$Party.Abbreviation == "AITC")
+df9 <- subset(df2, df2$Party.Abbreviation == "CPM")
+df10 <- subset(df2, df2$Party.Abbreviation == "JD(U)")
+df11 <- subset(df2, df2$Party.Abbreviation == "SP")
+df12 <- subset(df2, df2$Party.Abbreviation == "CPI(ML)(L)")
+
+
+df13 <- rbind(df3, df4, df5, df6, df7, df8, df9, df10, df11, df12)
+xtabs(~Party.Abbreviation+Candidate.Category, data = df13, addNA = FALSE, drop.unused.levels = TRUE)
+table2 <- xtabs(~Party.Abbreviation+Candidate.Category, data = df13, addNA = FALSE, drop.unused.levels = TRUE)
+barplot(table2, legend.text = TRUE, col = brewer.pal(n = 10, name = "Set3"), border = "White")
+```
+
+### Question 8: What is the Gender composition of the candidates belonging to these parties?
+```{r}
+xtabs(~Party.Abbreviation+Candidate.Sex, data = df13, addNA = FALSE, drop.unused.levels = TRUE)
+table3 <- xtabs(~Party.Abbreviation+Candidate.Sex, data = df13, addNA = FALSE, drop.unused.levels = TRUE)
+barplot(table3, legend.text = TRUE,  col = brewer.pal(n = 10, name = "Set3"), border = "White")
+```
+
+### Question 9: Who was the oldest candidate? Get all his Details
+```{r}
+df2[which.max(as.numeric(as.character(df2$Candidate.Age))), ]
+```
+
+### Question 10: Who was the oldest woman? Get all her details
+```{r}
+df_woman <- subset(df2, df2$Candidate.Sex == "F")
+df_woman[which.max(as.numeric(as.character(df_woman$Candidate.Age))), ]
+```
+
+### Question 11: Which Political party won the maximum number of seats?
+```{r}
+df_max_seats <- subset(df2, df2$Position == "1")
+summary(df_max_seats$Party.Abbreviation, maxsum = 10)
+```
+```{r}
+max_table <- table(summary(df_max_seats$Party.Abbreviation, maxsum = 10))
+
+pie(summary(df_max_seats$Party.Abbreviation, maxsum = 10),  col = brewer.pal(n = 11, name = "Set3"), border = "White")
+```
+
+### Question 12: Which state has the highest number of constituencies?
+```{r}
+summary(df_max_seats$State.name, maxsum = 7)
+pie(summary(df_max_seats$State.name, maxsum = 7),  col = brewer.pal(n = 7, name = "Set3"), border = "White")
+```
+
+### Question 13: In which state did BJP win the highest number of seats?
+```{r}
+df_max_bjp <- subset(df_max_seats, df_max_seats$Party.Abbreviation == "BJP")
+summary(df_max_bjp$State.name, maxsum = 10)
+pie(summary(df_max_bjp$State.name, maxsum = 10),  col = brewer.pal(n = 10, name = "Set3"), border = "White")
+```
+
+### Question 14: What is the total vote-share of BJP?
+```{r}
+total_votes <- sum(df2$Total.Votes.Polled)
+df_bjp <- subset(df2, df2$Party.Abbreviation == "BJP")
+total_votes_bjp <- sum(df_bjp$Total.Votes.Polled)
+share <- round(total_votes_bjp/total_votes, 4)
+print(paste(share * 100, "%"))
+```
+### Question 15: In which state did INC win the highest number of seats?
+```{r}
+df_max_inc <- subset(df_max_seats, df_max_seats$Party.Abbreviation == "INC")
+summary(df_max_inc$State.name, maxsum = 10)
+pie(summary(df_max_inc$State.name, maxsum = 10),  col = brewer.pal(n = 10, name = "Set3"), border = "White")
+```
+
+
+### Question 16: What is the total vote-share of INC?
+```{r}
+total_votes <- sum(df2$Total.Votes.Polled)
+df_inc <- subset(df2, df2$Party.Abbreviation == "INC")
+total_votes_inc <- sum(df_inc$Total.Votes.Polled)
+share <- round(total_votes_inc/total_votes, 4)
+print(paste(share * 100, "%"))
+```
+
+### Question 17: Which candidate got the highest number of votes?
+```{r}
+df2[which.max(df2$Total.Votes.Polled), ]
+```
+
+### Question 18: Which candidate got the lowest number of votes?
+```{r}
+df2[which.min(df2$Total.Votes.Polled), ]
+```
+
+
+### Question 19: Which constituency had the highest number of candidates?
+```{r}
+summary(df2$PC.name, maxsum = 2)
+```
+
+### Question 20: In how many constituencies was INC at second position?
+```{r}
+df_second <- subset(df2, df2$Position == "2")
+df_second_inc <- df_second[df_second$Party.Abbreviation == "INC", ]
+nrow(df_second_inc)
+```
+
